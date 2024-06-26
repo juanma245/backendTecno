@@ -2,7 +2,7 @@ from fastapi import APIRouter,Form,Depends
 from typing import Annotated
 from models.user import User,UserDb
 from database import get_db
-from models.functions import current_user
+from models.functions import authId
 import bcrypt
 
 router = APIRouter(
@@ -10,8 +10,12 @@ router = APIRouter(
 )
 
 @router.get("/prueba")
-async def me (user : str = Depends(current_user)):
- return user
+async def me (id : str = Depends(authId)):
+  if id is None:
+      return "no autorizado"
+  print (id)
+
+  return id
 
 @router.post("/register")
 async def register(user : UserDb):
