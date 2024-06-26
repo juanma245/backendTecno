@@ -1,15 +1,16 @@
 import mysql.connector as mysql
 from mysql.connector import Error
+from const.encrypConst import dbConst
 
 
 def get_db():
    try:
       conexion = mysql.connect(
-         host = 'localhost',
-         port = '3306',
-         user = 'root',
-         password = '',
-         db = 'tiendaTecno'
+         host = dbConst.host,
+         port = dbConst.port,
+         user = dbConst.user,
+         password = dbConst.password,
+         db = dbConst.db
       )
       if conexion.is_connected():
          return conexion
