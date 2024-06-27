@@ -9,7 +9,7 @@ import bcrypt
 
 router = APIRouter()
 
-@router.post("/login",status_code=200)
+@router.post("/login",status_code=status.HTTP_202_ACCEPTED)
 async def login(form : OAuth2PasswordRequestForm = Depends()):
     register = searchUser(form.username)
     if register is None:
