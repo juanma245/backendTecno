@@ -1,23 +1,26 @@
+import jwt
 from fastapi import APIRouter,Depends,HTTPException,status
 from models.functions import searchUser
 from const.encrypConst import const
 from fastapi.security import OAuth2PasswordRequestForm
-from jose import jwt
 from datetime import datetime, timedelta,timezone
 
 import bcrypt
 
 router = APIRouter()
 
-@router.post("/login")
+@router.post("/login",status_code=200)
 async def login(form : OAuth2PasswordRequestForm = Depends()):
-
     register = searchUser(form.username)
-    if register == "Not found":
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="El usuario no es correcto")
+    if register is None:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="incorrect user or password")
+
     
+    print(register)
     if bcrypt.checkpw(bytes(form.password,'utf-8'),bytes(register[2],'utf-8')):
-        return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="contraseña incorrecta")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="incorrect user or password")
     
     tokenExpiration = datetime.now(timezone.utc)+ timedelta(minutes=const.ACCESS_DURATION)
     

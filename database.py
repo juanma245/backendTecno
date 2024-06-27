@@ -1,6 +1,7 @@
 import mysql.connector as mysql
 from mysql.connector import Error
 from const.encrypConst import dbConst
+from fastapi import HTTPException, status
 
 
 def get_db():
@@ -14,8 +15,8 @@ def get_db():
       )
       if conexion.is_connected():
          return conexion
-   except Error as ex:
-       return "no se pudo "
+   except Error:
+      raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="connection with database failled")
    
 
 

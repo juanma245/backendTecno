@@ -9,4 +9,4 @@ app.include_router(login.router)
 
 @app.get("/")
 async def prueba():
-    return "prueba"
+    return "hello word"

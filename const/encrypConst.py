@@ -1,5 +1,5 @@
-from passlib.context import CryptContext
-from fastapi.security import OAuth2PasswordBearer,OAuth2PasswordRequestForm
+from fastapi.security import OAuth2PasswordBearer
+from fastapi import HTTPException,status
 
 
 class const():
@@ -14,5 +14,9 @@ class dbConst():
     user = 'root'
     password = ''
     db = 'tiendaTecno'
+
+class ErrorConst():
+    executeSql = HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                            detail="execute sql error")
 
 
