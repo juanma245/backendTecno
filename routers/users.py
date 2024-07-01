@@ -2,7 +2,7 @@ from fastapi import APIRouter,Form,Depends,HTTPException,status
 from typing import Annotated
 from models.user import User,UserDb
 from database import get_db
-from models.functions import authId,searchUser
+from models.functions import authId,searchUserDB,existsUser
 from mysql.connector import Error
 from const.encrypConst import ErrorConst
 import bcrypt
@@ -14,8 +14,7 @@ router = APIRouter(
 
 @router.post("/register",status_code=status.HTTP_201_CREATED)
 async def register(user : UserDb):
-    aux = searchUser()
-    if aux is not None:
+    if existsUser(user.usuario):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
                             detail="username already in use")
     conection = get_db()
@@ -55,7 +54,7 @@ async def getUser(userId : str = Depends(authId)):
   
     try:
         cursor = conection.cursor()
-        cursor.execute(f"SELECT * FROM usuario WHERE idUsuario = {userId};")
+        cursor.execute(f"SELECT usuario,emailRespaldo,nombreCompleto,numeroTelefono,direccion FROM usuario WHERE idUsuario = {userId};")
         register = cursor.fetchone()
         return register
     except Error:
