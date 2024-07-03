@@ -38,6 +38,21 @@ def existsUser(username : str):
     finally:
         conection.close()
 
+def searchUser(username : str):
+    conection = get_db()
+    try:
+        cursor = conection.cursor()
+        cursor.execute(f"SELECT idUsuario FROM usuario WHERE usuario = '{username}';")
+        register = cursor.fetchone()
+        if register is None:
+            return None
+        return register
+    except Error as exc:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                            detail="execute sql error") from exc
+    finally:
+        conection.close()
+
 def existsStore(storeName : str):
     connection = get_db()
     try:
@@ -62,10 +77,26 @@ def searchStore(storeName : str):
             return None
         return register
     except Error:
+        
         raise ErrorConst.executeSql
     finally:
         connection.close()
 
+def getLevel(idStore : int,idUser : int):
+    conection = get_db()
+    try:
+        cursor = conection.cursor()
+        cursor.execute(f"SELECT permiso FROM usuarioAdministraTienda WHERE usuario = {idUser} and tienda = {idStore};")
+        register = cursor.fetchone()
+        if register is None:
+            return False
+        return True
+    except Error as exc:
+        print(exc)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                            detail=exc) from exc
+    finally:
+        conection.close()
 
 async def authId(token : Annotated[str,Depends(const.oauth2)]):
     exepction = HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid credencials")

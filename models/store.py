@@ -5,3 +5,8 @@ class Tienda(BaseModel):
     direccionFisica : str = Field(max_length=100)
     logo : str = Field(max_length=200)
     descripcion : str = Field(max_length=500)
+
+class userAdminStore(BaseModel):
+    user : str
+    store : str
+    level : int
