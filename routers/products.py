@@ -1,4 +1,4 @@
-from fastapi import APIRouter,status,Body
+from fastapi import APIRouter,status
 from models.products import TipoProducto,Etiqueta
 from const.encrypConst import ErrorConst
 from mysql.connector import Error
@@ -39,7 +39,10 @@ async def listType():
     connection = get_db()
     try:
         cursor = connection.cursor()
-        cursor.execute(f"SELECT * FROM tipoProducto")
+        cursor.execute("""
+                       SELECT * 
+                       FROM tipoProducto
+                       """)
         register = cursor.fetchall()
         return register
     except Error:
@@ -53,7 +56,10 @@ async def addType(type : TipoProducto):
     connection = get_db()
     try:
         cursor = connection.cursor()
-        cursor.execute(f"INSERT INTO tipoProducto(nombre,descripcion) VALUES('{type.nombre}','{type.descripcion}');")
+        cursor.execute("""
+                       INSERT INTO tipoProducto(nombre,descripcion) 
+                       VALUES(%s,%s);
+                       """,(type.nombre,type.descripcion))
         connection.commit()
         return "Product created"    
     except Error:
@@ -66,7 +72,10 @@ async def listTag():
     connection = get_db()
     try:
         cursor = connection.cursor()
-        cursor.execute(f"SELECT * FROM etiqueta")
+        cursor.execute("""
+                       SELECT * 
+                       FROM etiqueta
+                       """)
         register = cursor.fetchall()
         return register
     except Error:
@@ -79,7 +88,10 @@ async def addTag(etiqueta : Etiqueta):
     connection = get_db()
     try:
         cursor = connection.cursor()
-        cursor.execute(f"INSERT INTO etiqueta(nombre) VALUES('{etiqueta.nombre}')")
+        cursor.execute("""
+                       INSERT INTO etiqueta(nombre) 
+                       VALUES(%s)
+                       """,(etiqueta.nombre,))
         connection.commit()
         return "tag created"    
     except Error:

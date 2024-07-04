@@ -12,12 +12,17 @@ def searchUserDB(username : str):
     conection = get_db()
     try:
         cursor = conection.cursor()
-        cursor.execute(f"SELECT idUsuario, usuario, contrasenia FROM usuario WHERE usuario = '{username}';")
+        cursor.execute("""
+                       SELECT idUsuario, usuario, contrasenia 
+                       FROM usuario 
+                       WHERE usuario = %s;
+                       """,(username))
         register = cursor.fetchone()
         if register is None:
             return None
         return register
     except Error as exc:
+        print(exc)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                             detail="execute sql error") from exc
     finally:
@@ -27,7 +32,11 @@ def existsUser(username : str):
     conection = get_db()
     try:
         cursor = conection.cursor()
-        cursor.execute(f"SELECT idUsuario FROM usuario WHERE usuario = '{username}';")
+        cursor.execute("""
+                       SELECT idUsuario 
+                       FROM usuario 
+                       WHERE usuario = %s;
+                       """,(username,))
         register = cursor.fetchone()
         if register is None:
             return False
@@ -42,7 +51,11 @@ def searchUser(username : str):
     conection = get_db()
     try:
         cursor = conection.cursor()
-        cursor.execute(f"SELECT idUsuario FROM usuario WHERE usuario = '{username}';")
+        cursor.execute("""
+                       SELECT idUsuario 
+                       FROM usuario 
+                       WHERE usuario = %s;
+                       """,(username,))
         register = cursor.fetchone()
         if register is None:
             return None
@@ -57,7 +70,11 @@ def existsStore(storeName : str):
     connection = get_db()
     try:
         cursor = connection.cursor()
-        cursor.execute(f"SELECT idTienda FROM tienda WHERE nombreTienda = '{storeName}'")
+        cursor.execute("""
+                       SELECT idTienda 
+                       FROM tienda 
+                       WHERE nombreTienda = %s
+                       """,(storeName,))
         register = cursor.fetchone()
         if register is None:
             return False
@@ -70,14 +87,19 @@ def existsStore(storeName : str):
 def searchStore(storeName : str):
     connection = get_db()
     try:
+        print(type(storeName))
         cursor = connection.cursor()
-        cursor.execute(f"SELECT idTienda FROM tienda WHERE nombreTienda = '{storeName}'")
+        cursor.execute("""
+                       SELECT idTienda 
+                       FROM tienda 
+                       WHERE nombreTienda = %s
+                       """,(storeName,))
         register = cursor.fetchone()
         if register is None:
             return None
         return register
-    except Error:
-        
+    except Error as er:
+        print(er)
         raise ErrorConst.executeSql
     finally:
         connection.close()
@@ -86,15 +108,18 @@ def getLevel(idStore : int,idUser : int):
     conection = get_db()
     try:
         cursor = conection.cursor()
-        cursor.execute(f"SELECT permiso FROM usuarioAdministraTienda WHERE usuario = {idUser} and tienda = {idStore};")
+        cursor.execute("""
+                       SELECT permiso 
+                       FROM usuarioAdministraTienda 
+                       WHERE usuario = %s AND tienda = %s;
+                       """,(idUser,idStore))
         register = cursor.fetchone()
         if register is None:
             return False
         return True
     except Error as exc:
-        print(exc)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                            detail=exc) from exc
+                            detail="sql error") from exc
     finally:
         conection.close()
 

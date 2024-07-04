@@ -42,10 +42,16 @@ async def addStore(store : Tienda, userId : str = Depends(authId)):
                             detail="Store already exists")
     try:
         cursor = connection.cursor()
-        cursor.execute(f"INSERT INTO tienda(nombreTienda,direccionFisica,logo,descripcion) VALUES('{store.nombreTienda}','{store.direccionFisica}','{store.logo}','{store.descripcion}')")
+        cursor.execute("""
+                       INSERT INTO tienda(nombreTienda,direccionFisica,logo,descripcion) 
+                       VALUES(%s,%s,%s,%s)
+                       """,(store.nombreTienda,store.direccionFisica,store.logo,store.descripcion))
         connection.commit()
         idStore = searchStore(store.nombreTienda)
-        cursor.execute(f"INSERT INTO usuarioAdministraTienda(usuario,tienda,permiso) VALUES({userId},{idStore},1)")
+        cursor.execute("""
+                       INSERT INTO usuarioAdministraTienda(usuario,tienda,permiso) 
+                       VALUES(%s,%s,1)
+                       """,(userId,idStore[0]))
         connection.commit()
         return "store created"    
     except Error:
@@ -58,14 +64,15 @@ async def list():
     connection = get_db()
     try:
         cursor = connection.cursor()
-        cursor.execute(f"SELECT * FROM tienda")
+        cursor.execute("""SELECT * 
+                       FROM tienda
+                       """)
         register = cursor.fetchall()
         return register
     except Error:
         raise ErrorConst.executeSql
     finally:
         connection.close()
-
 
 @router.get("/store/{storeName}",status_code=status.HTTP_200_OK)
 async def getStore(storeName : str):
@@ -75,7 +82,11 @@ async def getStore(storeName : str):
     connection = get_db()
     try:
         cursor = connection.cursor()
-        cursor.execute(f"SELECT nombreTienda,direccionFisica,logo,descripcion FROM tienda WHERE nombreTienda = '{storeName}'")
+        cursor.execute("""
+                       SELECT nombreTienda,direccionFisica,logo,descripcion 
+                       FROM tienda 
+                       WHERE nombreTienda = %s
+                       """,(storeName,))
         register = cursor.fetchall()
         return register
     except Error:
@@ -83,6 +94,25 @@ async def getStore(storeName : str):
     finally:
         connection.close()
 
+@router.delete("/deleteStore/{storeName}",status_code=status.HTTP_200_OK)
+async def delete(storeName : str):
+    idStore = searchStore(storeName)
+    if idStore is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail="store don't exists")
+    connection = get_db()
+    try:
+        cursor = connection.cursor()
+        cursor.execute("""
+                        DELETE FROM tienda
+                        WHERE idTienda = %s
+                       """,(idStore[0],))
+        connection.commit()
+        return ""    
+    except Error:
+        raise ErrorConst.executeSql
+    finally:
+        connection.close()
 
 @router.post("/addVendor", status_code=status.HTTP_200_OK)
 async def addVendor(userAdd : userAdminStore, userID : str = Depends(authId)):
@@ -90,8 +120,7 @@ async def addVendor(userAdd : userAdminStore, userID : str = Depends(authId)):
     if idStore is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail="store don't exists")
-    level = getLevel(idStore,userID)
-
+    level = getLevel(idStore[0],userID)
     if level is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                             detail="user has not authorization")
@@ -103,17 +132,43 @@ async def addVendor(userAdd : userAdminStore, userID : str = Depends(authId)):
     if idUser is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail="user don't exists")
-    
     connection = get_db()
     try:
         cursor = connection.cursor()
-        cursor.execute(f"INSERT INTO usuarioAdministraTienda(usuario,tienda,permiso) VALUES({idUser,idStore,userAdd.level})")
+        cursor.execute("""
+                       INSERT INTO usuarioAdministraTienda(usuario,tienda,permiso) 
+                       VALUES(%s,%s,%s)
+                       """,(idUser[0],idStore[0],userAdd.level))
         connection.commit()
         return "add succesfuly"    
-    except Error:
+    except Error as ex:
+        raise ErrorConst.executeSql from ex
+    finally:
+        connection.close()
+
+@router.get("/listVendor/{storeName}",status_code=status.HTTP_200_OK)
+async def listVendor(storeName : str):
+    idStore = searchStore(storeName)
+    if idStore is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail="store don't exists")
+    connection = get_db()
+    try:
+        cursor = connection.cursor()
+        cursor.execute("""
+            SELECT udt.usuario, udt.permiso, u.usuario, u.nombreCompleto 
+            FROM usuarioAdministraTienda as udt 
+            JOIN usuario as u ON u.idUsuario = udt.usuario 
+            WHERE tienda = %s
+        """, (idStore[0],))
+        register = cursor.fetchall()
+        return register
+    except Error as er:
+        print(er)
         raise ErrorConst.executeSql
     finally:
         connection.close()
+    
 
     
 

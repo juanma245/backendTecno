@@ -1,4 +1,4 @@
-from fastapi import APIRouter,HTTPException,status
+from fastapi import APIRouter,status
 from models.permission import Permiso
 from database import get_db
 from const.encrypConst import ErrorConst
@@ -24,7 +24,7 @@ async def create(permission : Permiso):
     connection = get_db()
     try:
         cursor = connection.cursor()
-        cursor. execute(f"INSERT INTO permiso(nombre,descripcion,nivel) VALUES('{permission.nombre}','{permission.descripcion}',{permission.nivel})")
+        cursor. execute("INSERT INTO permiso(nombre,descripcion,nivel) VALUES('%s','%s',%s)",(permission.nombre,permission.descripcion,permission.nivel))
         connection.commit()
         return "Permiso añadido"
     except Error:
