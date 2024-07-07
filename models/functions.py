@@ -16,7 +16,7 @@ def searchUserDB(username : str):
                        SELECT idUsuario, usuario, contrasenia 
                        FROM usuario 
                        WHERE usuario = %s;
-                       """,(username))
+                       """,(username,))
         register = cursor.fetchone()
         if register is None:
             return None
@@ -104,6 +104,24 @@ def searchStore(storeName : str):
     finally:
         connection.close()
 
+def searchProduct(productName : str):
+    connection = get_db()
+    try:
+        cursor = connection.cursor()
+        cursor.execute("""
+                       SELECT idProducto
+                       FROM producto
+                       WHERE nombreProducto = %s
+                       """,(productName,))
+        register = cursor.fetchone()
+        if register is None:
+            return None
+        return register
+    except Error:
+        raise ErrorConst.executeSql
+    finally:
+        connection.close()
+
 def getLevel(idStore : int,idUser : int):
     conection = get_db()
     try:
@@ -122,6 +140,24 @@ def getLevel(idStore : int,idUser : int):
                             detail="sql error") from exc
     finally:
         conection.close()
+
+def existsType(idType : int):
+    connection = get_db()
+    try:
+        cursor = connection.cursor()
+        cursor.execute("""
+                       SELECT nombre 
+                       FROM tipoProducto
+                       WHERE idTipoProducto = %s
+                       """,(idType,))
+        register = cursor.fetchone()
+        if register is None: 
+            return False
+        return True
+    except Error:
+        raise ErrorConst.executeSql
+    finally:
+        connection.close()
 
 async def authId(token : Annotated[str,Depends(const.oauth2)]):
     exepction = HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid credencials")

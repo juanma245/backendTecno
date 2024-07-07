@@ -18,5 +18,11 @@ class dbConst():
 class ErrorConst():
     executeSql = HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                             detail="execute sql error")
+    
+    storeDontExist = HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail="store don't exists")
+    
+    userDontExist = HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail="user don't exists")
 
 

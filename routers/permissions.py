@@ -24,7 +24,10 @@ async def create(permission : Permiso):
     connection = get_db()
     try:
         cursor = connection.cursor()
-        cursor. execute("INSERT INTO permiso(nombre,descripcion,nivel) VALUES('%s','%s',%s)",(permission.nombre,permission.descripcion,permission.nivel))
+        cursor. execute("""
+                        INSERT INTO permiso(nombre,descripcion,nivel) 
+                        VALUES(%s,%s,%s)
+                        """,(permission.nombre,permission.descripcion,permission.nivel))
         connection.commit()
         return "Permiso añadido"
     except Error:

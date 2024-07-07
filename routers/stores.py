@@ -1,5 +1,5 @@
 from fastapi import APIRouter,status,HTTPException,Depends
-from models.store import Tienda,userAdminStore
+from models.store import Tienda,userAdminStore,userAux
 from database import get_db
 from const.encrypConst import ErrorConst
 from mysql.connector import Error
@@ -98,8 +98,7 @@ async def getStore(storeName : str):
 async def delete(storeName : str):
     idStore = searchStore(storeName)
     if idStore is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                            detail="store don't exists")
+        raise ErrorConst.storeDontExist
     connection = get_db()
     try:
         cursor = connection.cursor()
@@ -108,7 +107,7 @@ async def delete(storeName : str):
                         WHERE idTienda = %s
                        """,(idStore[0],))
         connection.commit()
-        return ""    
+        return "store deleted"    
     except Error:
         raise ErrorConst.executeSql
     finally:
@@ -118,8 +117,7 @@ async def delete(storeName : str):
 async def addVendor(userAdd : userAdminStore, userID : str = Depends(authId)):
     idStore = searchStore(userAdd.store)
     if idStore is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                            detail="store don't exists")
+        raise ErrorConst.storeDontExist
     level = getLevel(idStore[0],userID)
     if level is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
@@ -130,8 +128,7 @@ async def addVendor(userAdd : userAdminStore, userID : str = Depends(authId)):
     
     idUser = searchUser(userAdd.user)
     if idUser is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                            detail="user don't exists")
+        raise ErrorConst.userDontExist
     connection = get_db()
     try:
         cursor = connection.cursor()
@@ -145,6 +142,22 @@ async def addVendor(userAdd : userAdminStore, userID : str = Depends(authId)):
         raise ErrorConst.executeSql from ex
     finally:
         connection.close()
+
+@router.delete("/deleteVendor/{storeName}", status_code=status.HTTP_200_OK)
+async def deleteVendor(storeName : str,user : userAux, userID : str = Depends(authId)):
+    idStore = getStore(storeName)
+    if(idStore is None):
+        raise ErrorConst.storeDontExist
+    idUser = searchUser(user)
+    if(idUser is None):
+        raise ErrorConst.userDontExist
+    level = getLevel(idStore[0],userID)
+    if level is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                            detail="user has not authorization")
+    elif level != 1:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                            detail="user has not level enought for this function ")
 
 @router.get("/listVendor/{storeName}",status_code=status.HTTP_200_OK)
 async def listVendor(storeName : str):

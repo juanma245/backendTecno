@@ -10,3 +10,6 @@ class userAdminStore(BaseModel):
     user : str
     store : str
     level : int
+
+class userAux(BaseModel):
+    user : str

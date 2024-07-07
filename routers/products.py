@@ -1,8 +1,9 @@
-from fastapi import APIRouter,status
-from models.products import TipoProducto,Etiqueta
+from fastapi import APIRouter,status,Depends,HTTPException,status
+from models.products import TipoProducto,Etiqueta,Producto
 from const.encrypConst import ErrorConst
 from mysql.connector import Error
 from database import get_db
+from models.functions import authId,searchStore,getLevel,existsType,searchProduct
 #from typing import Annotated
 
 router = APIRouter(prefix="/products")
@@ -50,7 +51,6 @@ async def listType():
     finally:
         connection.close()
 
-
 @router.post("/addType",status_code=status.HTTP_201_CREATED)
 async def addType(type : TipoProducto):
     connection = get_db()
@@ -61,7 +61,7 @@ async def addType(type : TipoProducto):
                        VALUES(%s,%s);
                        """,(type.nombre,type.descripcion))
         connection.commit()
-        return "Product created"    
+        return "Type created"    
     except Error:
         raise ErrorConst.executeSql
     finally:
@@ -99,3 +99,64 @@ async def addTag(etiqueta : Etiqueta):
     finally:
         connection.close()
 
+@router.post("/addProduct/{storeName}",status_code=status.HTTP_201_CREATED)
+async def addProduct(storeName : str, product : Producto, userID : str = Depends(authId)):
+    if product.existencias < 0:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="negative stock")
+    
+    if product.valorUnitario < 0:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="negative price")
+    idStore = searchStore(storeName)
+    if idStore is None:
+        raise ErrorConst.storeDontExist
+    
+    level = getLevel(idStore[0],userID)
+    if level is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                            detail="user has not authorization")
+    
+    if existsType(product.tipoProducto) == False:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail="Product type doesn't exists")
+    
+    connection = get_db()
+    try:
+        cursor = connection.cursor()
+        cursor.execute("""
+                        INSERT INTO producto(tienda,nombreProducto,descripcion,imagen,tipoProducto,existencias,valorUnitario)
+                        VALUES(%s,%s,%s,%s,%s,%s,%s)
+                        """,(idStore[0],product.nombreProducto,product.descripcion,product.imagen,product.tipoProducto,product.existencias,product.valorUnitario))
+        connection.commit()
+        return "Product Created"    
+    except Error:
+        raise ErrorConst.executeSql
+    finally:
+        connection.close()
+
+@router.get("/product/{productName}",status_code=status.HTTP_200_OK)
+async def getProduc(productName : str):
+    idProduct = searchProduct(productName)
+    if idProduct is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail="product doesn't exists")
+    
+    #print(idProduct[0][0])
+    connection = get_db()
+    try:
+        cursor = connection.cursor()
+        cursor.execute("""
+                        SELECT p.nombreProducto, t.nombreTienda, p.descripcion, p.imagen,tp.nombre, p.tipoProducto, p.existencias, p.valorUnitario
+                        FROM producto as p
+                        JOIN tienda as t ON p.tienda = t.idTienda
+                        JOIN tipoProducto as tp ON tp.idTipoProducto = p.tipoProducto
+                        WHERE idProducto = %s
+                        """,(idProduct[0],))
+        register = cursor.fetchall()
+        return register
+    except Error as err:
+        print(err)
+        raise ErrorConst.executeSql
+    finally:
+        connection.close()
