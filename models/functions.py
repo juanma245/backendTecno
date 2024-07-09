@@ -84,6 +84,24 @@ def existsStore(storeName : str):
     finally:
         connection.close()
 
+def existsStoreById(storeId : int):
+    connection = get_db()
+    try:
+        cursor = connection.cursor()
+        cursor.execute("""
+                       SELECT idTienda 
+                       FROM tienda 
+                       WHERE idTienda = %s
+                       """,(storeId,))
+        register = cursor.fetchone()
+        if register is None:
+            return False
+        return True
+    except Error:
+        raise ErrorConst.executeSql
+    finally:
+        connection.close()
+
 def searchStore(storeName : str):
     connection = get_db()
     try:

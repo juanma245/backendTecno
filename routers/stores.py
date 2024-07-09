@@ -1,63 +1,37 @@
 from fastapi import APIRouter,status,HTTPException,Depends
 from models.store import Tienda,userAdminStore,userAux
-from database import get_db
+from database import get_db,executeInsert
 from const.encrypConst import ErrorConst
 from mysql.connector import Error
 from models.functions import existsStore,searchStore,getLevel,searchUser,authId
 
 router = APIRouter(prefix="/stores")
 
-'''
-    plantilla 
-
-    connection = get_db()
-    try:
-        cursor = connection.cursor()
-        cursor.execute(f"insertar sql")
-        connection.commit()
-        return ""    
-    except Error:
-        raise ErrorConst.executeSql
-    finally:
-        connection.close()
-
-    connection = get_db()
-    try:
-        cursor = connection.cursor()
-        cursor.execute(f"insertar sql")
-        register = cursor.fetchall()
-        return register
-    except Error:
-        raise ErrorConst.executeSql
-    finally:
-        connection.close()
-
-'''
 
 @router.post("/addStore",status_code=status.HTTP_201_CREATED)
 async def addStore(store : Tienda, userId : str = Depends(authId)):
-    connection = get_db()
     if existsStore(store.nombreTienda):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
                             detail="Store already exists")
-    try:
-        cursor = connection.cursor()
-        cursor.execute("""
-                       INSERT INTO tienda(nombreTienda,direccionFisica,logo,descripcion) 
-                       VALUES(%s,%s,%s,%s)
-                       """,(store.nombreTienda,store.direccionFisica,store.logo,store.descripcion))
-        connection.commit()
-        idStore = searchStore(store.nombreTienda)
-        cursor.execute("""
-                       INSERT INTO usuarioAdministraTienda(usuario,tienda,permiso) 
-                       VALUES(%s,%s,1)
-                       """,(userId,idStore[0]))
-        connection.commit()
-        return "store created"    
-    except Error:
-        raise ErrorConst.executeSql
-    finally:
-        connection.close()
+    sql1 = """
+            INSERT INTO tienda(nombreTienda,direccionFisica,logo,descripcion) 
+            VALUES(%s,%s,%s,%s)
+        """
+    datos1 = (store.nombreTienda,store.direccionFisica,store.logo,store.descripcion)
+    
+    executeInsert(sql1,datos1)
+    idStore = searchStore(store.nombreTienda)
+    
+    sql2 = """
+                INSERT INTO usuarioAdministraTienda(usuario,tienda,permiso) 
+                VALUES(%s,%s,1)
+            """
+    
+    datos2 = (userId,idStore[0])
+
+    executeInsert(sql2,datos2)
+
+    return "Store created"
 
 @router.get("/listStores",status_code=status.HTTP_200_OK)
 async def list():
@@ -83,7 +57,7 @@ async def getStore(storeName : str):
     try:
         cursor = connection.cursor()
         cursor.execute("""
-                       SELECT nombreTienda,direccionFisica,logo,descripcion 
+                       SELECT idTienda,nombreTienda,direccionFisica,logo,descripcion 
                        FROM tienda 
                        WHERE nombreTienda = %s
                        """,(storeName,))

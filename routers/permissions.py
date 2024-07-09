@@ -1,37 +1,28 @@
 from fastapi import APIRouter,status
 from models.permission import Permiso
-from database import get_db
-from const.encrypConst import ErrorConst
-from mysql.connector import Error
+from database import executeSelectAll,executeInsert
+
 
 router = APIRouter(prefix="/permissions")
 
 @router.get("/listPermissions",status_code=status.HTTP_200_OK)
 async def list():
-    connection = get_db()
-    try:
-        cursor = connection.cursor()
-        cursor.execute("SELECT * FROM permiso")
-        register = cursor.fetchall()
-        return register
-    except Error:
-        raise ErrorConst.executeSql
-    finally:
-        connection.close()
-
+    sql = """
+            SELECT * 
+            FROM permiso
+        """
+    register = executeSelectAll(sql,())
+    return register
+    
 @router.post("/addPermission",status_code=status.HTTP_201_CREATED)
 async def create(permission : Permiso):
-    connection = get_db()
-    try:
-        cursor = connection.cursor()
-        cursor. execute("""
-                        INSERT INTO permiso(nombre,descripcion,nivel) 
-                        VALUES(%s,%s,%s)
-                        """,(permission.nombre,permission.descripcion,permission.nivel))
-        connection.commit()
-        return "Permiso añadido"
-    except Error:
-        raise ErrorConst.executeSql
-    finally:
-        connection.close()
+    sql = """
+            INSERT INTO permiso(nombre,descripcion,nivel) 
+            VALUES(%s,%s,%s)
+        """
+    datos = (permission.nombre,permission.descripcion,permission.nivel)
+    
+    executeInsert(sql,datos)
+    return "permission created"
+    
     
