@@ -104,6 +104,25 @@ def searchStore(storeName : str):
     finally:
         connection.close()
 
+def existsProduct(productName : str, idStore : int):
+    connection = get_db()
+    try:
+        cursor = connection.cursor()
+        cursor.execute("""
+                        SELECT idProducto
+                       FROM producto
+                       WHERE nombreProducto = %s AND tienda = %s
+                        """,(productName,idStore))
+        register = cursor.fetchone()
+        if register is None:
+            return False
+        return True
+    except Error as er:
+        print (er)
+        raise ErrorConst.executeSql
+    finally:
+        connection.close()
+
 def searchProduct(productName : str):
     connection = get_db()
     try:
