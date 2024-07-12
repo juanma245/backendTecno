@@ -1,8 +1,7 @@
 from fastapi import APIRouter,status,HTTPException,Depends
 from models.store import Tienda,userAdminStore,userAux
-from database import get_db,executeInsert
+from database import executeChange,executeSelectAll,executeSelectOne
 from const.encrypConst import ErrorConst
-from mysql.connector import Error
 from models.functions import existsStore,searchStore,getLevel,searchUser,authId
 
 router = APIRouter(prefix="/stores")
@@ -19,7 +18,7 @@ async def addStore(store : Tienda, userId : str = Depends(authId)):
         """
     datos1 = (store.nombreTienda,store.direccionFisica,store.logo,store.descripcion)
     
-    executeInsert(sql1,datos1)
+    executeChange(sql1,datos1)
     idStore = searchStore(store.nombreTienda)
     
     sql2 = """
@@ -29,64 +28,52 @@ async def addStore(store : Tienda, userId : str = Depends(authId)):
     
     datos2 = (userId,idStore[0])
 
-    executeInsert(sql2,datos2)
+    executeChange(sql2,datos2)
 
     return "Store created"
 
 @router.get("/listStores",status_code=status.HTTP_200_OK)
 async def list():
-    connection = get_db()
-    try:
-        cursor = connection.cursor()
-        cursor.execute("""SELECT * 
-                       FROM tienda
-                       """)
-        register = cursor.fetchall()
-        return register
-    except Error:
-        raise ErrorConst.executeSql
-    finally:
-        connection.close()
+    sql = """
+            SELECT * 
+            FROM tienda
+        """
+    register = executeSelectAll(sql,())
 
+    return register
+    
 @router.get("/store/{storeName}",status_code=status.HTTP_200_OK)
 async def getStore(storeName : str):
     if not existsStore(storeName):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail="store don't exists")
-    connection = get_db()
-    try:
-        cursor = connection.cursor()
-        cursor.execute("""
-                       SELECT idTienda,nombreTienda,direccionFisica,logo,descripcion 
-                       FROM tienda 
-                       WHERE nombreTienda = %s
-                       """,(storeName,))
-        register = cursor.fetchall()
-        return register
-    except Error:
-        raise ErrorConst.executeSql
-    finally:
-        connection.close()
+    
+    sql = """
+            SELECT idTienda,nombreTienda,direccionFisica,logo,descripcion 
+            FROM tienda 
+            WHERE nombreTienda = %s
+        """
+    
+    datos = (storeName,)
+
+    register = executeSelectOne(sql,datos)
+
+    return register
 
 @router.delete("/deleteStore/{storeName}",status_code=status.HTTP_200_OK)
 async def delete(storeName : str):
     idStore = searchStore(storeName)
     if idStore is None:
         raise ErrorConst.storeDontExist
-    connection = get_db()
-    try:
-        cursor = connection.cursor()
-        cursor.execute("""
-                        DELETE FROM tienda
-                        WHERE idTienda = %s
-                       """,(idStore[0],))
-        connection.commit()
-        return "store deleted"    
-    except Error:
-        raise ErrorConst.executeSql
-    finally:
-        connection.close()
-
+    sql = """
+            DELETE FROM tienda
+            WHERE idTienda = %s
+        """
+    
+    datos = (idStore[0],)
+    executeChange(sql,datos)
+    return "store deleted"
+    
 @router.post("/addVendor", status_code=status.HTTP_200_OK)
 async def addVendor(userAdd : userAdminStore, userID : str = Depends(authId)):
     idStore = searchStore(userAdd.store)
@@ -103,20 +90,16 @@ async def addVendor(userAdd : userAdminStore, userID : str = Depends(authId)):
     idUser = searchUser(userAdd.user)
     if idUser is None:
         raise ErrorConst.userDontExist
-    connection = get_db()
-    try:
-        cursor = connection.cursor()
-        cursor.execute("""
-                       INSERT INTO usuarioAdministraTienda(usuario,tienda,permiso) 
-                       VALUES(%s,%s,%s)
-                       """,(idUser[0],idStore[0],userAdd.level))
-        connection.commit()
-        return "add succesfuly"    
-    except Error as ex:
-        raise ErrorConst.executeSql from ex
-    finally:
-        connection.close()
+    sql = """
+            INSERT INTO usuarioAdministraTienda(usuario,tienda,permiso) 
+            VALUES(%s,%s,%s)
+        """
+    datos = (idUser[0],idStore[0],userAdd.level)
 
+    executeChange(sql,datos)
+
+    return "add succesfuly"
+    
 @router.delete("/deleteVendor/{storeName}", status_code=status.HTTP_200_OK)
 async def deleteVendor(storeName : str,user : userAux, userID : str = Depends(authId)):
     idStore = getStore(storeName)
@@ -132,6 +115,17 @@ async def deleteVendor(storeName : str,user : userAux, userID : str = Depends(au
     elif level != 1:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                             detail="user has not level enought for this function ")
+    
+    sql = """
+            DELETE FROM usuarioAdministraTienda
+            WHERE tienda = %s AND usuario = %s
+        """
+    
+    datos = (idStore[0],idUser[0])
+
+    executeChange(sql,datos)
+
+    return "vendor deleted"
 
 @router.get("/listVendor/{storeName}",status_code=status.HTTP_200_OK)
 async def listVendor(storeName : str):
@@ -139,22 +133,19 @@ async def listVendor(storeName : str):
     if idStore is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail="store don't exists")
-    connection = get_db()
-    try:
-        cursor = connection.cursor()
-        cursor.execute("""
+    sql = """
             SELECT udt.usuario, udt.permiso, u.usuario, u.nombreCompleto 
             FROM usuarioAdministraTienda as udt 
             JOIN usuario as u ON u.idUsuario = udt.usuario 
             WHERE tienda = %s
-        """, (idStore[0],))
-        register = cursor.fetchall()
-        return register
-    except Error as er:
-        print(er)
-        raise ErrorConst.executeSql
-    finally:
-        connection.close()
+        """
+    
+    datos = (idStore[0],)
+
+    register = executeSelectAll(sql,datos)
+
+    return register
+    
     
 
     

@@ -2,7 +2,7 @@ from fastapi import APIRouter,status,Depends,HTTPException,status
 from models.products import TipoProducto,Etiqueta,Producto
 from const.encrypConst import ErrorConst
 
-from database import executeSelectAll,executeInsert,executeSelectOne
+from database import executeSelectAll,executeChange,executeSelectOne
 from models.functions import authId,searchStore,getLevel,existsType,existsProduct
 #from typing import Annotated
 
@@ -27,7 +27,7 @@ async def addType(type : TipoProducto):
         """
     datos = (type.nombre,type.descripcion)
 
-    executeInsert(sql,datos)
+    executeChange(sql,datos)
     return "type created"
     
 @router.get("/listTag",status_code=status.HTTP_200_OK)
@@ -47,7 +47,7 @@ async def addTag(etiqueta : Etiqueta):
         """
     datos = (etiqueta.nombre,)
 
-    executeInsert(sql, datos)
+    executeChange(sql, datos)
 
     return "tag created"
     
@@ -84,7 +84,7 @@ async def addProduct(storeName : str, product : Producto, userID : str = Depends
         """
     datos = (idStore[0],product.nombreProducto,product.descripcion,product.imagen,product.tipoProducto,product.existencias,product.valorUnitario)
 
-    executeInsert(sql, datos)
+    executeChange(sql, datos)
 
     return "Product created"
     

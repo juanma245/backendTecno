@@ -1,6 +1,6 @@
 from fastapi import APIRouter,status
 from models.permission import Permiso
-from database import executeSelectAll,executeInsert
+from database import executeSelectAll,executeChange
 
 
 router = APIRouter(prefix="/permissions")
@@ -22,7 +22,7 @@ async def create(permission : Permiso):
         """
     datos = (permission.nombre,permission.descripcion,permission.nivel)
     
-    executeInsert(sql,datos)
+    executeChange(sql,datos)
     return "permission created"
     
     

@@ -19,7 +19,7 @@ def get_db():
    except Error:
       raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="connection with database failled")
    
-def executeInsert(sql : str, datos : tuple):
+def executeChange(sql : str, datos : tuple):
    connection = get_db()
    try:
         cursor = connection.cursor()
