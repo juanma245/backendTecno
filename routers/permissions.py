@@ -1,4 +1,6 @@
 from fastapi import APIRouter,status
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import JSONResponse
 from models.permission import Permiso
 from database import executeSelectAll,executeChange
 
@@ -12,7 +14,18 @@ async def list():
             FROM permiso
         """
     register = executeSelectAll(sql,())
-    return register
+    responseList = []
+    for permission in register:
+        response = {
+            "id" : permission[0],
+            "name" : permission[1],
+            "description" : permission[2],
+            "level" : permission[3] 
+        }
+        responseList.append(response)
+
+    jresponse = jsonable_encoder(responseList)
+    return JSONResponse(content=jresponse)
     
 @router.post("/addPermission",status_code=status.HTTP_201_CREATED)
 async def create(permission : Permiso):

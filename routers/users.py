@@ -1,4 +1,6 @@
 from fastapi import APIRouter,Form,Depends,HTTPException,status
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import JSONResponse
 from typing import Annotated
 from models.user import User,UserDb
 from database import executeChange,executeSelectAll,executeSelectOne
@@ -73,7 +75,16 @@ async def getUser(userId : str = Depends(authId)):
 
     register = executeSelectOne(sql,datos)
 
-    return register
+    response = {"idUser" : userId, 
+                "user" : register[0],
+                "email" : register[1],
+                "name" : register[2],
+                "cell" : register[3],
+                "address" : register[4]
+                }   
+    
+    jResponse = jsonable_encoder(response)
+    return JSONResponse(content=jResponse)
     
 @router.put("/modify",status_code=status.HTTP_205_RESET_CONTENT)
 async def modifyUser(user : User,userId : str = Depends(authId)):

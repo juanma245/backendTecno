@@ -1,7 +1,8 @@
 from fastapi import APIRouter,status,Depends,HTTPException,status
 from models.products import TipoProducto,Etiqueta,Producto
 from const.encrypConst import ErrorConst
-
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import JSONResponse
 from database import executeSelectAll,executeChange,executeSelectOne
 from models.functions import authId,searchStore,getLevel,existsType,existsProduct
 #from typing import Annotated
@@ -17,7 +18,17 @@ async def listType():
             FROM tipoProducto
         """
     register = executeSelectAll(sql,())
-    return register
+    responseList = []
+    for type in register:
+        response = {
+            "id" : type[0],
+            "name" : type[1],
+            "description" : type[2]
+        }
+        responseList.append(response)
+    
+    jresponse = jsonable_encoder(responseList)
+    return JSONResponse(content=jresponse)
     
 @router.post("/addType",status_code=status.HTTP_201_CREATED)
 async def addType(type : TipoProducto):
@@ -28,7 +39,7 @@ async def addType(type : TipoProducto):
     datos = (type.nombre,type.descripcion)
 
     executeChange(sql,datos)
-    return "type created"
+    return JSONResponse(content={"message" : "type created"})
     
 @router.get("/listTag",status_code=status.HTTP_200_OK)
 async def listTag():
@@ -37,7 +48,16 @@ async def listTag():
             FROM etiqueta
         """
     register = executeSelectAll(sql,())
-    return register
+    responseList = []
+    for tag in register:
+        response = {
+            "id" : tag[0],
+            "name" : tag[1]
+        }
+        responseList.append(response)
+    
+    jresponse = jsonable_encoder(responseList)
+    return JSONResponse(content=jresponse)
     
 @router.post("/addTag",status_code=status.HTTP_201_CREATED)
 async def addTag(etiqueta : Etiqueta):
@@ -49,7 +69,7 @@ async def addTag(etiqueta : Etiqueta):
 
     executeChange(sql, datos)
 
-    return "tag created"
+    return JSONResponse(content={"message" : "tag created"})
     
 @router.post("/addProduct/{storeName}",status_code=status.HTTP_201_CREATED)
 async def addProduct(storeName : str, product : Producto, userID : str = Depends(authId)):
@@ -86,16 +106,28 @@ async def addProduct(storeName : str, product : Producto, userID : str = Depends
 
     executeChange(sql, datos)
 
-    return "Product created"
+    return JSONResponse(content={"message" : "Product created"})
     
 @router.get("/listProducts",status_code=status.HTTP_200_OK)
 async def listProducs():
     sql = """
-            SELECT nombreProducto, descripcion, imagen, valorUnitario
+            SELECT idProducto,nombreProducto, descripcion, imagen, valorUnitario,existencias
             FROM producto
         """
     register = executeSelectAll(sql,())
-    return register
+    responseList = []
+    for product in register:
+        response = {"idProduct" : product[0], 
+                "name" : product[1],
+                "description" : product[2],
+                "image" : product[3],
+                "unitPrice" : product[4],
+                "stock" : product[5]}
+        responseList.append(response)
+
+   
+    jResponse = jsonable_encoder(responseList)
+    return JSONResponse(content=jResponse)
     
 @router.get("/listProducts/{storeName}",status_code=status.HTTP_200_OK)
 async def listProducs(storeName : str):
@@ -104,32 +136,57 @@ async def listProducs(storeName : str):
         raise ErrorConst.storeDontExist
     
     sql = """
-            SELECT nombreProducto, descripcion, imagen, valorUnitario
+            SELECT idProducto, nombreProducto, descripcion, imagen, valorUnitario,existencias
             FROM producto
             WHERE tienda = %s
         """
     datos = (idStore[0],)
 
     register = executeSelectOne(sql,datos)
-    return register
+
+    responseList = []
+    for product in register:
+        response = {"idProduct" : product[0], 
+                "name" : product[1],
+                "description" : product[2],
+                "image" : product[3],
+                "unitPrice" : product[4],
+                "stock" : product[5]}
+        responseList.append(response)
+    
+    jresponse = jsonable_encoder(responseList)
+    return JSONResponse(content=jresponse)
     
 @router.get("/listProduct/{productName}",status_code=status.HTTP_200_OK)
 async def listProduct(productName : str):
 
     sql = """
-            SELECT nombreProducto, descripcion, imagen, valorUnitario
+            SELECT idProducto, nombreProducto, descripcion, imagen, valorUnitario
             FROM producto
             WHERE nombreProducto = %s
         """
     datos = (productName,)
 
     register = executeSelectAll(sql,datos)
-    return register
+
+    responseList = []
+    for product in register:
+        response = {"idProduct" : product[0], 
+                "name" : product[1],
+                "description" : product[2],
+                "image" : product[3],
+                "unitPrice" : product[4],
+                "stock" : product[5]}
+        
+        responseList.append(response)
+    
+    jresponse = jsonable_encoder(responseList)
+    return JSONResponse(content=jresponse)
     
 @router.get("/product/{idProduct}",status_code=status.HTTP_200_OK)
 async def getProduc(idProduct : str):
     sql = """
-            SELECT p.nombreProducto, t.nombreTienda, p.descripcion, p.imagen,tp.nombre, p.tipoProducto, p.existencias, p.valorUnitario
+            SELECT p.nombreProducto, t.nombreTienda, p.descripcion, p.imagen,tp.nombre, p.existencias, p.valorUnitario
             FROM producto as p
             JOIN tienda as t ON p.tienda = t.idTienda
             JOIN tipoProducto as tp ON tp.idTipoProducto = p.tipoProducto
@@ -139,5 +196,18 @@ async def getProduc(idProduct : str):
 
     register = executeSelectAll(sql,datos)
 
-    return register
+    response = {
+        "id" : idProduct,
+        "productName" : register[0],
+        "storeName" : register[1],
+        "description" : register[2],
+        "image" : register[3],
+        "typeName" : register[4],
+        "stock" : register[5],
+        "unitPrice" : register[6]
+    }
+
+    jresponse = jsonable_encoder(response)
+
+    return JSONResponse(content=jresponse)
     
