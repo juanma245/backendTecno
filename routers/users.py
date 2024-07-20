@@ -34,33 +34,57 @@ async def register(user : UserDb):
 
     executeChange(sql,datos)
 
-    return "userCreated"
+    return JSONResponse(content={"message" : "user created"})
 
 @router.get("/listUser")
 async def listUser():
     
     sql = """
-            SELECT * 
+            SELECT idUsuario,usuario,emailRespaldo,nombreCompleto,numeroTelefono,imagen,direccion 
             FROM usuario
         """
 
-    register = executeSelectAll(sql,())
+    users = executeSelectAll(sql,())
 
-    return register
+    responseList = []
+    for user in users:
+        response = {
+            "id" : user[0],
+            "user" : user[1],
+            "email" : user[2],
+            "name" : user[3],
+            "phone" : user[4],
+            "image" : user[5],
+            "address" : user[6]
+        }
+        responseList.append(response)
+
+    jresponse = jsonable_encoder(responseList)
+    return JSONResponse(content=jresponse)
     
 @router.get("/user/{user}", status_code=status.HTTP_200_OK)
 async def getUser(user : str):
 
     sql = """
-            SELECT usuario,emailRespaldo,nombreCompleto,numeroTelefono,direccion 
+            SELECT idUsuario,emailRespaldo,nombreCompleto,numeroTelefono,direccion 
             FROM usuario 
             WHERE usuario = %s
         """
     datos = (user,)
 
-    register = executeSelectOne(sql,datos)
+    userD = executeSelectOne(sql,datos)
 
-    return register
+    response = {
+        "id" : userD[0],
+        "user" : user,
+        "email" : userD[1],
+        "name" : userD[2],
+        "phone" : userD[3],
+        "address" : userD[4]
+    }
+
+    jresponse = jsonable_encoder(response)
+    return JSONResponse(content=jresponse)
     
 @router.get("/user", status_code=status.HTTP_200_OK)
 async def getUser(userId : str = Depends(authId)):
@@ -97,7 +121,7 @@ async def modifyUser(user : User,userId : str = Depends(authId)):
 
     executeChange(sql,datos)
 
-    return "user modified"
+    return JSONResponse(content={"message" : "user modified"})
     
 @router.put("/changePass",status_code=status.HTTP_205_RESET_CONTENT)
 async def changePass(passW : Annotated[str,Form()],userId : str = Depends(authId)):
@@ -118,7 +142,7 @@ async def changePass(passW : Annotated[str,Form()],userId : str = Depends(authId
 
     executeChange(sql,datos)
 
-    return "change successful"
+    return JSONResponse(content={"message" : "change successful"})
     
 @router.delete("/deleteUser",status_code=status.HTTP_204_NO_CONTENT)
 async def deleteUser(userId : str = Depends(authId)):
@@ -130,7 +154,7 @@ async def deleteUser(userId : str = Depends(authId)):
 
     executeChange(sql,datos)
 
-    return "deleted successful"
+    return JSONResponse(content={"messsage" : "deleted successful"})
     
 
 

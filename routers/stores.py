@@ -1,4 +1,6 @@
 from fastapi import APIRouter,status,HTTPException,Depends
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import JSONResponse
 from models.store import Tienda,userAdminStore,userAux
 from database import executeChange,executeSelectAll,executeSelectOne
 from const.encrypConst import ErrorConst
@@ -30,7 +32,7 @@ async def addStore(store : Tienda, userId : str = Depends(authId)):
 
     executeChange(sql2,datos2)
 
-    return "Store created"
+    return JSONResponse(content={"message" : "Store created"})
 
 @router.get("/listStores",status_code=status.HTTP_200_OK)
 async def list():
@@ -40,7 +42,19 @@ async def list():
         """
     register = executeSelectAll(sql,())
 
-    return register
+    responseList = []
+    for store in register:
+        response = {
+            "id" : store[0],
+            "name" : store[1],
+            "address" : store[2],
+            "logo" : store[3],
+            "description" : store[4]
+        }
+        responseList.append(response)
+
+    jresponse = jsonable_encoder(responseList)
+    return JSONResponse(content=jresponse)
     
 @router.get("/store/{storeName}",status_code=status.HTTP_200_OK)
 async def getStore(storeName : str):
@@ -49,16 +63,26 @@ async def getStore(storeName : str):
                             detail="store don't exists")
     
     sql = """
-            SELECT idTienda,nombreTienda,direccionFisica,logo,descripcion 
+            SELECT idTienda,direccionFisica,logo,descripcion 
             FROM tienda 
             WHERE nombreTienda = %s
         """
     
     datos = (storeName,)
 
-    register = executeSelectOne(sql,datos)
+    store = executeSelectOne(sql,datos)
 
-    return register
+    response = {
+        "id" : store[0],
+        "name" : storeName,
+        "address" : store[1],
+        "logo" : store[2],
+        "description" : store[3]
+    }
+
+    jresponse = jsonable_encoder(response)
+
+    return JSONResponse(content=jresponse)
 
 @router.delete("/deleteStore/{storeName}",status_code=status.HTTP_200_OK)
 async def delete(storeName : str):
@@ -72,7 +96,7 @@ async def delete(storeName : str):
     
     datos = (idStore[0],)
     executeChange(sql,datos)
-    return "store deleted"
+    return JSONResponse(content={"message" : "store deleted"})
     
 @router.post("/addVendor", status_code=status.HTTP_200_OK)
 async def addVendor(userAdd : userAdminStore, userID : str = Depends(authId)):
@@ -98,7 +122,7 @@ async def addVendor(userAdd : userAdminStore, userID : str = Depends(authId)):
 
     executeChange(sql,datos)
 
-    return "add succesfuly"
+    return JSONResponse(content={"message" : "added"})
     
 @router.delete("/deleteVendor/{storeName}", status_code=status.HTTP_200_OK)
 async def deleteVendor(storeName : str,user : userAux, userID : str = Depends(authId)):
@@ -125,7 +149,7 @@ async def deleteVendor(storeName : str,user : userAux, userID : str = Depends(au
 
     executeChange(sql,datos)
 
-    return "vendor deleted"
+    return JSONResponse(content={"message" : "vendor deleted"})
 
 @router.get("/listVendor/{storeName}",status_code=status.HTTP_200_OK)
 async def listVendor(storeName : str):
@@ -142,9 +166,21 @@ async def listVendor(storeName : str):
     
     datos = (idStore[0],)
 
-    register = executeSelectAll(sql,datos)
+    vendors = executeSelectAll(sql,datos)
 
-    return register
+    responseList = []
+    for vendor in vendors:
+        response = {
+            "id" : vendor[0],
+            "level" : vendor[1],
+            "user" : vendor[2],
+            "name" : vendor[3]
+        }
+        responseList.append(response)
+
+    jresponse = jsonable_encoder(responseList)
+
+    return JSONResponse(content=jresponse)
     
     
 

@@ -1,4 +1,5 @@
 from fastapi import APIRouter,Depends,status,HTTPException
+from fastapi.responses import JSONResponse
 from models.functions import authId,existsStoreById,existsProductById
 from models.review import usuarioValoraTienda,usuarioValoraProducto
 from const.encrypConst import ErrorConst
@@ -23,7 +24,7 @@ async def addReviewStore(review : usuarioValoraTienda, userID : str = Depends(au
 
     executeChange(sql,datos)
 
-    return "review sended"
+    return JSONResponse(content={"message" : "review sended"})
     
 @router.post("/addReviewProduct",status_code=status.HTTP_201_CREATED)
 async def addReviewProduct(review : usuarioValoraProducto,userID = Depends(authId)):
@@ -42,4 +43,4 @@ async def addReviewProduct(review : usuarioValoraProducto,userID = Depends(authI
 
     executeChange(sql,datos)
 
-    return "review sended"
+    return JSONResponse(content={"message" : "review sended"})
