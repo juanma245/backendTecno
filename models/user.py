@@ -11,4 +11,4 @@ class User(BaseModel):
     address : Union[str, None] = Field(max_length=100) and None
 
 class UserDb(User):
-    contrasenia : str = Field(max_length=500)
+    password : str = Field(max_length=500)

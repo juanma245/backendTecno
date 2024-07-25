@@ -14,13 +14,13 @@ router = APIRouter(
 
 @router.post("/register",status_code=status.HTTP_201_CREATED)
 async def register(user : UserDb):
-    if existsUser(user.usuario):
+    if existsUser(user.user):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
                             detail="username already in use")
 
     try:
         sal = bcrypt.gensalt()
-        password = str(bcrypt.hashpw(bytes(user.contrasenia,'utf-8'),sal),'utf-8')
+        password = str(bcrypt.hashpw(bytes(user.password,'utf-8'),sal),'utf-8')
     except:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                             detail= "encryp failed")
