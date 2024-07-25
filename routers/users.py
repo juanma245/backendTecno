@@ -30,7 +30,7 @@ async def register(user : UserDb):
             VALUES(%s,%s,%s,%s);
         """
     
-    datos = (user.usuario,password,user.emailRespaldo,user.nombreCompleto)
+    datos = (user.user,password,user.email,user.name)
 
     executeChange(sql,datos)
 
@@ -117,7 +117,7 @@ async def modifyUser(user : User,userId : str = Depends(authId)):
             SET emailRespaldo = %s, nombreCompleto = %s,numeroTelefono = %s, direccion = %s 
             WHERE idUsuario = %s
         """
-    datos = (user.emailRespaldo,user.nombreCompleto,user.numeroTelefono,user.direccion,userId)
+    datos = (user.email,user.name,user.phone,user.address,userId)
 
     executeChange(sql,datos)
 
